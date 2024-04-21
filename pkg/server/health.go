@@ -2,10 +2,10 @@ package server
 
 import "net/http"
 
-type healthHandler struct {
-	server *Server
-}
+// HealthHandler handles the health check
+type HealthHandler struct{}
 
-func (h *healthHandler) Check(w http.ResponseWriter, r *http.Request) {
+// Check the server's health
+func (h *HealthHandler) Check(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("OK"))
 }

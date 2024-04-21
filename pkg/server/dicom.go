@@ -1,23 +1,31 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
-	"image/png"
-	"io"
 	"log/slog"
 	"net/http"
-	"os"
+	"strconv"
+	"strings"
 
+	"github.com/gorilla/mux"
+	"github.com/johnmarkli/dime/pkg/store"
 	"github.com/suyashkumar/dicom"
 	"github.com/suyashkumar/dicom/pkg/tag"
 )
 
-type dicomHandler struct {
-	server *Server
+// DICOMHandler handles requests for DICOM management
+type DICOMHandler struct {
+	store store.Store
 }
 
-func (d *dicomHandler) UploadDICOM(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("OK"))
+// NewDICOMHandler returns a new DICOMHandler
+func NewDICOMHandler(store store.Store) *DICOMHandler {
+	return &DICOMHandler{store}
+}
+
+// Upload a DICOM image
+func (d *DICOMHandler) Upload(w http.ResponseWriter, r *http.Request) {
 	slog.Info("Uploading DICOM...")
 
 	// Get file upload
@@ -27,70 +35,104 @@ func (d *dicomHandler) UploadDICOM(w http.ResponseWriter, r *http.Request) {
 		slog.Error(err.Error())
 		return
 	}
+	defer file.Close()
+
+	slog.Info("Uploaded DICOM",
+		slog.String("filename", header.Filename),
+		slog.Int64("size", header.Size),
+		slog.String("header", fmt.Sprintf("%+v", header.Header)))
 
 	// Parse dicom file
 	dataset, err := dicom.Parse(file, header.Size, nil)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(dataset)
 
-	// Save dicom as png
-	slog.Info("Saving DICOM as PNG")
-	pixelDataElement, err := dataset.FindElementByTag(tag.PixelData)
+	dcm := store.NewDICOM(&dataset)
+	err = d.store.Create(dcm)
 	if err != nil {
 		panic(err)
 	}
-	pixelDataInfo := dicom.MustGetPixelDataInfo(pixelDataElement.Value)
-	for i, fr := range pixelDataInfo.Frames {
-		// fmt.Println(i, fr)
-		img, err := fr.GetImage()
-		if err != nil {
-			panic(err)
-		}
 
-		f, err := os.Create(fmt.Sprintf("image_%d.png", i))
-		if err != nil {
-			panic(err)
-		}
-		err = png.Encode(f, img)
-		if err != nil {
-			panic(err)
-		}
-		err = f.Close()
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	sopInstanceUID, err := dataset.FindElementByTag(tag.SOPInstanceUID)
-	fmt.Println("sop instance UID", sopInstanceUID)
-
-	// Save dicom to file
-	defer file.Close()
-	slog.Info("Uploaded DICOM",
-		slog.String("filename", header.Filename),
-		slog.Int64("size", header.Size),
-		slog.String("header", fmt.Sprintf("%+v", header.Header)))
-	tempFile, err := os.CreateTemp("dicoms", "upload-*.dicom")
-	if err != nil {
-		slog.Error(err.Error())
-		return
-	}
-	defer tempFile.Close()
-
-	// read all of the contents of our uploaded file into a
-	// byte array
-	fileBytes, err := io.ReadAll(file)
-	if err != nil {
-		fmt.Println(err)
-	}
-	// write this byte array to our temporary file
-	tempFile.Write(fileBytes)
-	// return that we have successfully uploaded our file!
-	slog.Info("Saved DICOM")
+	var jsonBytes []byte
+	jsonBytes, err = json.Marshal(dcm)
+	w.WriteHeader(http.StatusCreated)
+	w.Write(jsonBytes)
 }
 
-func (d *dicomHandler) ListDICOMs(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("here are some dicoms"))
+// Read a DICOM image
+func (d *DICOMHandler) Read(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+	dcm, err := d.store.Read(id)
+	if err != nil {
+		panic(err)
+	}
+	var jsonBytes []byte
+	jsonBytes, err = json.Marshal(dcm)
+	w.Write(jsonBytes)
+}
+
+// Read a DICOM image
+func (d *DICOMHandler) Image(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+	b, err := d.store.GetImage(id)
+	if err != nil {
+		panic(err)
+	}
+	w.Header().Set("Content-Type", "image/png")
+	w.Write(b)
+}
+
+// Attributes from a DICOM image
+func (d *DICOMHandler) Attributes(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+	dcm, err := d.store.Read(id)
+	if err != nil {
+		panic(err)
+	}
+	var elements []*dicom.Element
+	tags := r.URL.Query()["tag"]
+	for _, strTag := range tags {
+		trimmedTag := strings.Trim(strTag, "()")
+		split := strings.Split(trimmedTag, ",")
+		if len(split) != 2 {
+			panic(err)
+		}
+		tagGroup, err := strconv.ParseUint(split[0], 16, 16)
+		if err != nil {
+			panic(err)
+		}
+		tagElement, err := strconv.ParseUint(split[1], 16, 16)
+		if err != nil {
+			panic(err)
+		}
+		t := tag.Tag{Group: uint16(tagGroup), Element: uint16(tagElement)}
+		el, err := dcm.Dataset().FindElementByTag(t)
+		if err != nil {
+			panic(err)
+		}
+		if el != nil {
+			elements = append(elements, el)
+		}
+	}
+
+	var jsonBytes []byte
+	jsonBytes, err = json.Marshal(elements)
+	w.Write(jsonBytes)
+}
+
+// List DICOMS
+func (d *DICOMHandler) List(w http.ResponseWriter, r *http.Request) {
+	dicoms, err := d.store.List()
+	if err != nil {
+		panic(err)
+	}
+	var jsonBytes []byte
+	jsonBytes, err = json.Marshal(dicoms)
+	if err != nil {
+		panic(err)
+		// InternalServerErrorHandler(w, r)
+		// return
+	}
+	w.Write(jsonBytes)
 }
