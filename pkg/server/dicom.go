@@ -34,7 +34,10 @@ func (d *DICOMHandler) Upload(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	// Get file upload
-	r.ParseMultipartForm(10 << 20) // limit of 10MB files
+	err := r.ParseMultipartForm(10 << 20) // limit of 10MB files
+	if err != nil {
+		panic(fmt.Errorf("failed to parse form: %w", err))
+	}
 	file, header, err := r.FormFile("file")
 	if err != nil {
 		panic(err)
@@ -69,7 +72,7 @@ func (d *DICOMHandler) Upload(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	w.WriteHeader(http.StatusCreated)
-	w.Write(jsonBytes)
+	_, _ = w.Write(jsonBytes)
 }
 
 // Read a DICOM image
@@ -90,7 +93,10 @@ func (d *DICOMHandler) Read(w http.ResponseWriter, r *http.Request) {
 	// Return DICOM info
 	var jsonBytes []byte
 	jsonBytes, err = json.Marshal(dcm)
-	w.Write(jsonBytes)
+	if err != nil {
+		panic(err)
+	}
+	_, _ = w.Write(jsonBytes)
 }
 
 // Attributes from a DICOM image
@@ -138,7 +144,10 @@ func (d *DICOMHandler) Attributes(w http.ResponseWriter, r *http.Request) {
 	// Return attribute data
 	var jsonBytes []byte
 	jsonBytes, err = json.Marshal(elements)
-	w.Write(jsonBytes)
+	if err != nil {
+		panic(err)
+	}
+	_, _ = w.Write(jsonBytes)
 }
 
 // Image returns the DICOM image as a PNG
@@ -158,7 +167,7 @@ func (d *DICOMHandler) Image(w http.ResponseWriter, r *http.Request) {
 
 	// Return DICOM Image
 	w.Header().Set("Content-Type", "image/png")
-	w.Write(b)
+	_, _ = w.Write(b)
 }
 
 // List DICOMS
@@ -181,7 +190,7 @@ func (d *DICOMHandler) List(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	w.Write(jsonBytes)
+	_, _ = w.Write(jsonBytes)
 }
 func handleError(rec any, w http.ResponseWriter) {
 	errVal, ok := rec.(error)
@@ -191,10 +200,9 @@ func handleError(rec any, w http.ResponseWriter) {
 	slog.Error(errVal.Error())
 	if errors.Is(errVal, store.ErrNotFound) {
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("404 Not Found"))
+		_, _ = w.Write([]byte("404 Not Found"))
 	} else {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(errVal.Error()))
+		_, _ = w.Write([]byte(errVal.Error()))
 	}
-	return
 }

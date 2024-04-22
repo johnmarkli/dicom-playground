@@ -43,7 +43,10 @@ func (fs *FileStore) Create(dcm *DICOM) error {
 		return fmt.Errorf("failed to create dicom file: %w", err)
 	}
 	defer dcmFile.Close()
-	dicom.Write(dcmFile, *dcm.dataset)
+	err = dicom.Write(dcmFile, *dcm.dataset)
+	if err != nil {
+		return fmt.Errorf("failed to write dicom file: %w", err)
+	}
 
 	// save PNG to file system
 	pngFile, err := os.Create(filepath.Join(fs.dir, pngDir, fmt.Sprintf("%s.png", dcm.SOPInstanceUID)))
@@ -96,7 +99,7 @@ func (fs *FileStore) GetImage(sopInstanceUID string) ([]byte, error) {
 
 // List DICOM images from the file system by SOP Instance UID
 func (fs *FileStore) List() ([]*DICOM, error) {
-  dicoms := []*DICOM{}
+	dicoms := []*DICOM{}
 	files, _ := os.ReadDir(filepath.Join(fs.dir, dicomDir))
 	for _, file := range files {
 		dataset, err := dicom.ParseFile(filepath.Join(fs.dir, dicomDir, file.Name()), nil)

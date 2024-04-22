@@ -62,13 +62,13 @@ func New() (*Server, error) {
 // Run the dime server
 func (s *Server) Run() {
 	slog.Info("Starting dime server", slog.String("on", s.server.Addr))
-	go s.server.ListenAndServe()
+  go func() { _ = s.server.ListenAndServe() }()
 }
 
 // Shutdown the dime server
-func (s *Server) Shutdown() error {
+func (s *Server) Shutdown() {
 	slog.Info("Shutting down dime server")
-	return s.server.Shutdown(context.Background())
+	_ = s.server.Shutdown(context.Background())
 }
 
 // Server returns the http server

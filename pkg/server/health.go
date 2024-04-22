@@ -7,5 +7,5 @@ type HealthHandler struct{}
 
 // Check server health
 func (h *HealthHandler) Check(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("OK"))
+	_, _ = w.Write([]byte("OK"))
 }

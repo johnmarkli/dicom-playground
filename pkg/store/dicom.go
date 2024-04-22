@@ -43,9 +43,9 @@ func (d *DICOM) Image() (*image.Image, error) {
 		return nil, fmt.Errorf("failed to find pixel data: %w", err)
 	}
 	pixelDataInfo := dicom.MustGetPixelDataInfo(pixelDataElement.Value)
-	for _, fr := range pixelDataInfo.Frames {
-		// assumes one frame
-		img, err := fr.GetImage()
+	frames := pixelDataInfo.Frames
+	if len(frames) > 0 {
+		img, err := frames[0].GetImage() // assuming image is in first frame
 		if err != nil {
 			return nil, fmt.Errorf("failed to get image from frame: %w", err)
 		}
