@@ -12,7 +12,7 @@ import (
 
 func TestHealthHandler(t *testing.T) {
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "/health", nil)
+	r := httptest.NewRequest(http.MethodGet, "/health", nil)
 	hh := server.HealthHandler{}
 	hh.Check(w, r)
 	defer w.Result().Body.Close()

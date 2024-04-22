@@ -70,6 +70,11 @@ func (s *Server) Shutdown() error {
 	return s.server.Shutdown(context.Background())
 }
 
+// Server returns the http server
+func (s *Server) Server() *http.Server {
+	return s.server
+}
+
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info("Request received",

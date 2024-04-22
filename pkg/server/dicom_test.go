@@ -31,7 +31,7 @@ func TestDICOMHandlerRead(t *testing.T) {
 	assert.NotNil(t, st)
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "/dicom", nil)
+	r := httptest.NewRequest(http.MethodGet, "/dicoms", nil)
 	r = mux.SetURLVars(r, map[string]string{"id": testSOPInstanceUID})
 
 	h := server.NewDICOMHandler(st)
@@ -49,7 +49,7 @@ func TestDICOMHandlerAttributes(t *testing.T) {
 	assert.NotNil(t, st)
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", fmt.Sprintf("/dicom/%s/attributes/?tag=(0002,0000)&tag=(0008,0016)", testSOPInstanceUID), nil)
+	r := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/dicoms/%s/attributes?tag=(0002,0000)&tag=(0008,0016)", testSOPInstanceUID), nil)
 	r = mux.SetURLVars(r, map[string]string{"id": testSOPInstanceUID})
 
 	h := server.NewDICOMHandler(st)
@@ -71,7 +71,7 @@ func TestDICOMHandlerImage(t *testing.T) {
 	assert.NotNil(t, st)
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", fmt.Sprintf("/dicom/%s/image/", testSOPInstanceUID), nil)
+	r := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/dicoms/%s/image/", testSOPInstanceUID), nil)
 	r = mux.SetURLVars(r, map[string]string{"id": testSOPInstanceUID})
 
 	h := server.NewDICOMHandler(st)
@@ -90,7 +90,7 @@ func TestDICOMHandlerList(t *testing.T) {
 	assert.NotNil(t, st)
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "/dicom", nil)
+	r := httptest.NewRequest(http.MethodGet, "/dicoms", nil)
 
 	h := server.NewDICOMHandler(st)
 	h.List(w, r)
@@ -99,6 +99,30 @@ func TestDICOMHandlerList(t *testing.T) {
 	body, err := io.ReadAll(w.Result().Body)
 	assert.NoError(t, err)
 	assert.JSONEq(t, `[{"sopInstanceUID":"1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395"}]`, string(body))
+}
+
+func TestDICOMHandlerNotFound(t *testing.T) {
+	st, err := store.NewMemStore()
+	assert.NoError(t, err)
+	h := server.NewDICOMHandler(st)
+
+	handlerFuncs := []func(http.ResponseWriter, *http.Request){
+		h.Read,
+		h.Attributes,
+		h.Image,
+	}
+
+	for _, hf := range handlerFuncs {
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, "/dicoms/badid", nil)
+		r = mux.SetURLVars(r, map[string]string{"id": "badid"})
+		hf(w, r)
+		assert.Equal(t, http.StatusNotFound, w.Result().StatusCode)
+		body, err := io.ReadAll(w.Result().Body)
+		assert.NoError(t, err)
+		assert.Equal(t, "404 Not Found", string(body))
+		w.Result().Body.Close()
+	}
 }
 
 // uploadDICOM uploads a DICOM file
@@ -121,7 +145,7 @@ func uploadDICOM(t *testing.T, filePath string) *store.MemStore {
 	mw.Close()
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("POST", "/dicom", &b)
+	r := httptest.NewRequest(http.MethodPost, "/dicoms", &b)
 	r.Header.Add("Content-Type", mw.FormDataContentType())
 
 	st, err := store.NewMemStore()
