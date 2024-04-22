@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"image"
 
 	"github.com/suyashkumar/dicom"
@@ -14,10 +15,10 @@ type DICOM struct {
 }
 
 // NewDICOM returns a new DICOM instance
-func NewDICOM(dataset *dicom.Dataset) *DICOM {
+func NewDICOM(dataset *dicom.Dataset) (*DICOM, error) {
 	sopInstanceUIDElement, err := dataset.FindElementByTag(tag.SOPInstanceUID)
 	if err != nil {
-		return nil
+		return nil, fmt.Errorf("failed to find sop instance uid: %w", err)
 	}
 	uids := sopInstanceUIDElement.Value.GetValue().([]string)
 	var uid string
@@ -27,7 +28,7 @@ func NewDICOM(dataset *dicom.Dataset) *DICOM {
 	return &DICOM{
 		SOPInstanceUID: uid,
 		dataset:        dataset,
-	}
+	}, nil
 }
 
 // Dataset returns the DICOM as a *dicom.Dataset
@@ -36,19 +37,19 @@ func (d *DICOM) Dataset() *dicom.Dataset {
 }
 
 // Image returns the DICOM as an image.Image
-func (d *DICOM) Image() *image.Image {
+func (d *DICOM) Image() (*image.Image, error) {
 	pixelDataElement, err := d.dataset.FindElementByTag(tag.PixelData)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed to find pixel data: %w", err)
 	}
 	pixelDataInfo := dicom.MustGetPixelDataInfo(pixelDataElement.Value)
 	for _, fr := range pixelDataInfo.Frames {
 		// assumes one frame
 		img, err := fr.GetImage()
 		if err != nil {
-			panic(err)
+			return nil, fmt.Errorf("failed to get image from frame: %w", err)
 		}
-		return &img
+		return &img, nil
 	}
-	return nil
+	return nil, nil
 }

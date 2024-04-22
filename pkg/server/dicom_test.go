@@ -2,7 +2,6 @@ package server_test
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -17,72 +16,48 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	testSOPInstanceUID = "1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395"
+	testDataPath       = "../../testdata/IM000001-mri"
+)
+
 func TestDICOMHandlerUpload(t *testing.T) {
-	w := uploadDICOM(t, "../../testdata/IM000001-mri")
-	defer w.Result().Body.Close()
-
-	assert.Equal(t, http.StatusCreated, w.Result().StatusCode)
-
-	body, err := io.ReadAll(w.Result().Body)
-	assert.NoError(t, err)
-	assert.JSONEq(t, `{"sopInstanceUID":"1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395"}`, string(body))
+	st := uploadDICOM(t, testDataPath)
+	assert.NotNil(t, st)
 }
 
 func TestDICOMHandlerRead(t *testing.T) {
-	w := uploadDICOM(t, "../../testdata/IM000001-mri")
-	defer w.Result().Body.Close()
+	st := uploadDICOM(t, testDataPath)
+	assert.NotNil(t, st)
 
-	assert.Equal(t, http.StatusCreated, w.Result().StatusCode)
-	body, err := io.ReadAll(w.Result().Body)
-	assert.NoError(t, err)
-
-	var dcm store.DICOM
-	err = json.Unmarshal(body, &dcm)
-	assert.NoError(t, err)
-	assert.Equal(t, "1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395", dcm.SOPInstanceUID)
-
-	w = httptest.NewRecorder()
+	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "/dicom", nil)
-	r = mux.SetURLVars(r, map[string]string{"id": dcm.SOPInstanceUID})
+	r = mux.SetURLVars(r, map[string]string{"id": testSOPInstanceUID})
 
-	store := store.NewFileStore("data")
-	h := server.NewDICOMHandler(store)
+	h := server.NewDICOMHandler(st)
 	h.Read(w, r)
 	defer w.Result().Body.Close()
-
 	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 
-	body, err = io.ReadAll(w.Result().Body)
+	body, err := io.ReadAll(w.Result().Body)
 	assert.NoError(t, err)
 	assert.JSONEq(t, `{"sopInstanceUID":"1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395"}`, string(body))
 }
 
 func TestDICOMHandlerAttributes(t *testing.T) {
-	w := uploadDICOM(t, "../../testdata/IM000001-mri")
-	defer w.Result().Body.Close()
+	st := uploadDICOM(t, testDataPath)
+	assert.NotNil(t, st)
 
-	assert.Equal(t, http.StatusCreated, w.Result().StatusCode)
-	body, err := io.ReadAll(w.Result().Body)
-	assert.NoError(t, err)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", fmt.Sprintf("/dicom/%s/attributes/?tag=(0002,0000)&tag=(0008,0016)", testSOPInstanceUID), nil)
+	r = mux.SetURLVars(r, map[string]string{"id": testSOPInstanceUID})
 
-	var dcm store.DICOM
-	err = json.Unmarshal(body, &dcm)
-	assert.NoError(t, err)
-	assert.Equal(t, "1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395", dcm.SOPInstanceUID)
-
-	w = httptest.NewRecorder()
-
-	r := httptest.NewRequest("GET", fmt.Sprintf("/dicom/%s/attributes/?tag=(0002,0000)&tag=(0008,0016)", "1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395"), nil)
-	r = mux.SetURLVars(r, map[string]string{"id": dcm.SOPInstanceUID})
-
-	store := store.NewFileStore("data")
-	h := server.NewDICOMHandler(store)
+	h := server.NewDICOMHandler(st)
 	h.Attributes(w, r)
 	defer w.Result().Body.Close()
-
 	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 
-	body, err = io.ReadAll(w.Result().Body)
+	body, err := io.ReadAll(w.Result().Body)
 	assert.NoError(t, err)
 	expected := `[
   {"tag":{"Group":2,"Element":0},"VR":4,"rawVR":"UL","valueLength":4,"value":[186]},
@@ -91,17 +66,33 @@ func TestDICOMHandlerAttributes(t *testing.T) {
 	assert.JSONEq(t, expected, string(body))
 }
 
-func TestDICOMHandlerList(t *testing.T) {
-	w := uploadDICOM(t, "../../testdata/IM000001-mri")
+func TestDICOMHandlerImage(t *testing.T) {
+	st := uploadDICOM(t, testDataPath)
+	assert.NotNil(t, st)
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", fmt.Sprintf("/dicom/%s/image/", testSOPInstanceUID), nil)
+	r = mux.SetURLVars(r, map[string]string{"id": testSOPInstanceUID})
+
+	h := server.NewDICOMHandler(st)
+	h.Image(w, r)
 	defer w.Result().Body.Close()
+	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
+	assert.Equal(t, "image/png", w.Result().Header.Get("Content-Type"))
 
-	assert.Equal(t, http.StatusCreated, w.Result().StatusCode)
+	body, err := io.ReadAll(w.Result().Body)
+	assert.NoError(t, err)
+	assert.Len(t, body, 127594) // byte length of test png
+}
 
-	w = httptest.NewRecorder()
+func TestDICOMHandlerList(t *testing.T) {
+	st := uploadDICOM(t, testDataPath)
+	assert.NotNil(t, st)
+
+	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "/dicom", nil)
 
-	store := store.NewFileStore("data")
-	h := server.NewDICOMHandler(store)
+	h := server.NewDICOMHandler(st)
 	h.List(w, r)
 	defer w.Result().Body.Close()
 
@@ -110,8 +101,8 @@ func TestDICOMHandlerList(t *testing.T) {
 	assert.JSONEq(t, `[{"sopInstanceUID":"1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395"}]`, string(body))
 }
 
-func uploadDICOM(t *testing.T, filePath string) *httptest.ResponseRecorder {
-	// get dicom test data from file
+// uploadDICOM uploads a DICOM file
+func uploadDICOM(t *testing.T, filePath string) *store.MemStore {
 	file, err := os.Open(filePath)
 	assert.NoError(t, err)
 	assert.NotNil(t, file)
@@ -119,10 +110,12 @@ func uploadDICOM(t *testing.T, filePath string) *httptest.ResponseRecorder {
 
 	var b bytes.Buffer
 	mw := multipart.NewWriter(&b)
+
 	var fw io.Writer
 	fw, err = mw.CreateFormFile("file", file.Name())
 	assert.NoError(t, err)
 	assert.NotNil(t, fw)
+
 	_, err = io.Copy(fw, file)
 	assert.NoError(t, err)
 	mw.Close()
@@ -130,8 +123,18 @@ func uploadDICOM(t *testing.T, filePath string) *httptest.ResponseRecorder {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("POST", "/dicom", &b)
 	r.Header.Add("Content-Type", mw.FormDataContentType())
-	store := store.NewFileStore("data")
-	h := server.NewDICOMHandler(store)
+
+	st, err := store.NewMemStore()
+	assert.NoError(t, err)
+
+	h := server.NewDICOMHandler(st)
 	h.Upload(w, r)
-	return w
+	defer w.Result().Body.Close()
+
+	assert.Equal(t, http.StatusCreated, w.Result().StatusCode)
+
+	body, err := io.ReadAll(w.Result().Body)
+	assert.NoError(t, err)
+	assert.JSONEq(t, `{"sopInstanceUID":"1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395"}`, string(body))
+	return st
 }

@@ -11,7 +11,3 @@ A RESTful API exposes the following functionality:
 
 ### TODO
 - swagger API
-- error handling
-- logging / log levels
-- configurable port and other options
-- dockerfile to build image
