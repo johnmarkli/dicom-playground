@@ -65,7 +65,7 @@ func TestServerRoutes(t *testing.T) {
 	res = w.Result()
 	body, err = io.ReadAll(res.Body)
 	assert.NoError(t, err)
-	assert.JSONEq(t, `{"id":"1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395"}`, string(body))
+	assert.JSONEq(t, testDICOMjson, string(body))
 	res.Body.Close()
 
 	// GET /dicoms
@@ -75,7 +75,7 @@ func TestServerRoutes(t *testing.T) {
 	res = w.Result()
 	body, err = io.ReadAll(res.Body)
 	assert.NoError(t, err)
-	assert.JSONEq(t, `[{"id":"1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395"}]`, string(body))
+	assert.JSONEq(t, fmt.Sprintf("[%s]", testDICOMjson), string(body))
 	res.Body.Close()
 
 	// GET /dicoms/:id
@@ -85,7 +85,7 @@ func TestServerRoutes(t *testing.T) {
 	res = w.Result()
 	body, err = io.ReadAll(res.Body)
 	assert.NoError(t, err)
-	assert.JSONEq(t, `{"id":"1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395"}`, string(body))
+	assert.JSONEq(t, testDICOMjson, string(body))
 	res.Body.Close()
 
 	// GET /dicoms/:id/attributes

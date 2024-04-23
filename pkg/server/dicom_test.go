@@ -21,6 +21,14 @@ const (
 	testDataPath = "../../testdata/IM000001-mri"
 )
 
+var (
+	testDICOMjson = `{
+  "id":"1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395",
+  "seriesInstanceUID":"1.3.12.2.1107.5.2.6.24119.30000013121716094326500000394",
+  "studyInstanceUID":"1.2.840.114202.4.833393677.4209323108.691055951.3610221745"
+}`
+)
+
 func TestDICOMHandlerUpload(t *testing.T) {
 	st := uploadDICOM(t, testDataPath)
 	assert.NotNil(t, st)
@@ -41,7 +49,7 @@ func TestDICOMHandlerRead(t *testing.T) {
 
 	body, err := io.ReadAll(w.Result().Body)
 	assert.NoError(t, err)
-	assert.JSONEq(t, `{"id":"1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395"}`, string(body))
+	assert.JSONEq(t, testDICOMjson, string(body))
 }
 
 func TestDICOMHandlerAttributes(t *testing.T) {
@@ -98,7 +106,7 @@ func TestDICOMHandlerList(t *testing.T) {
 
 	body, err := io.ReadAll(w.Result().Body)
 	assert.NoError(t, err)
-	assert.JSONEq(t, `[{"id":"1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395"}]`, string(body))
+	assert.JSONEq(t, fmt.Sprintf("[%s]", testDICOMjson), string(body))
 }
 
 func TestDICOMHandlerNotFound(t *testing.T) {
@@ -159,6 +167,6 @@ func uploadDICOM(t *testing.T, filePath string) *store.MemStore {
 
 	body, err := io.ReadAll(w.Result().Body)
 	assert.NoError(t, err)
-	assert.JSONEq(t, `{"id":"1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395"}`, string(body))
+	assert.JSONEq(t, testDICOMjson, string(body))
 	return st
 }

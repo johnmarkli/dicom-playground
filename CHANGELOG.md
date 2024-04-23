@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Swagger API docs
+- script to upload directory of DICOMs
+- study and series instance UIDs to DICOM object
 
 ### Updated
 

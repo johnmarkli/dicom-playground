@@ -16,6 +16,12 @@ definitions:
       id:
         example: 1.3.12.2.1107.5.2.6.24119.30000013121716094326500000436
         type: string
+      seriesInstanceUID:
+        example: 1.3.12.2.1107.5.2.6.24119.30000013121716094326500000394
+        type: string
+      studyInstanceUID:
+        example: 1.2.840.114202.4.833393677.4209323108.691055951.3610221745
+        type: string
     type: object
   tag.Tag:
     properties:
