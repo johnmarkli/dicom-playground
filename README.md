@@ -3,8 +3,8 @@
 `dime` (**di**com **m**angement **e**ndpoint) is a small web service designed to work with DICOM files. It accepts and stores DICOM files, extracts and returns DICOM header attributes, and converts DICOM files in to a PNG for web-based viewing.
 
 A RESTful API exposes the following functionality:
-- `POST /dicoms` - upload dicom file to be saved
-- `GET  /dicoms` - list dicoms saved
+- `POST /dicoms` - upload dicom file with `multipart/form-data`
+- `GET  /dicoms` - list metadata on dicoms saved
 - `GET  /dicoms/:id/attributes?tag=<tag1>&tag=<tagN>` - get dicom header attributes by ID and tags
 - `GET  /dicoms/:id/image` - get dicom image by ID
 - `GET  /health` - server health check
