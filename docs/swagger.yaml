@@ -1,0 +1,198 @@
+definitions:
+  dicom.Element:
+    properties:
+      VR:
+        $ref: '#/definitions/tag.VRKind'
+      rawVR:
+        type: string
+      tag:
+        $ref: '#/definitions/tag.Tag'
+      value: {}
+      valueLength:
+        type: integer
+    type: object
+  store.DICOM:
+    properties:
+      id:
+        example: 1.3.12.2.1107.5.2.6.24119.30000013121716094326500000436
+        type: string
+    type: object
+  tag.Tag:
+    properties:
+      element:
+        type: integer
+      group:
+        description: |-
+          Group and element are results of parsing the hex-pair tag, such as
+          (1000,10008)
+        type: integer
+    type: object
+  tag.VRKind:
+    enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+    - 13
+    type: integer
+    x-enum-varnames:
+    - VRStringList
+    - VRBytes
+    - VRString
+    - VRUInt16List
+    - VRUInt32List
+    - VRInt16List
+    - VRInt32List
+    - VRFloat32List
+    - VRFloat64List
+    - VRSequence
+    - VRItem
+    - VRTagList
+    - VRDate
+    - VRPixelData
+info:
+  contact:
+    email: johnmarkli@gmail.com
+    name: John Li
+    url: http://www.swagger.io/support
+  description: dime is a small web service designed to work with DICOM files.
+  title: dime API
+  version: "1.0"
+paths:
+  /dicoms:
+    get:
+      description: List DICOMs on the server
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/store.DICOM'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: List DICOMs
+      tags:
+      - dicoms
+    post:
+      consumes:
+      - multipart/form-data
+      description: Uploads a DICOM image to the server
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/store.DICOM'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Upload a DICOM image
+      tags:
+      - dicoms
+  /dicoms/{id}:
+    get:
+      description: Read a DICOM image from the server by SOP Instance UID
+      parameters:
+      - description: DICOM SOP Instance UID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/store.DICOM'
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Read a DICOM image
+      tags:
+      - dicoms
+  /dicoms/{id}/attributes:
+    get:
+      description: Get attributes from a DICOM image by tag
+      parameters:
+      - description: DICOM SOP Instance UID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dicom.Element'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get attributes from DICOM image
+      tags:
+      - dicoms
+  /dicoms/{id}/image:
+    get:
+      description: Get DICOM imange as a PNG
+      parameters:
+      - description: DICOM SOP Instance UID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - image/png
+      responses:
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get DICOM image as a PNG
+      tags:
+      - dicoms
+  /health:
+    get:
+      description: Check the health of the server
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+      summary: Check server health
+      tags:
+      - health
+swagger: "2.0"

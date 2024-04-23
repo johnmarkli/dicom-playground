@@ -26,6 +26,15 @@ func NewDICOMHandler(store store.Store) *DICOMHandler {
 }
 
 // Upload a DICOM image
+//
+//	@Summary		Upload a DICOM image
+//	@Description	Uploads a DICOM image to the server
+//	@Tags			dicoms
+//	@Accept			mpfd
+//	@Produce		json
+//	@Success		201	{object}	store.DICOM
+//	@Failure		500	{object}	string
+//	@Router			/dicoms [post]
 func (d *DICOMHandler) Upload(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		if rec := recover(); rec != nil {
@@ -63,7 +72,7 @@ func (d *DICOMHandler) Upload(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	slog.Info("Saved DICOM", slog.String("id", dcm.SOPInstanceUID))
+	slog.Info("Saved DICOM", slog.String("id", dcm.ID))
 
 	// Return DICOM info
 	var jsonBytes []byte
@@ -76,6 +85,16 @@ func (d *DICOMHandler) Upload(w http.ResponseWriter, r *http.Request) {
 }
 
 // Read a DICOM image
+//
+//	@Summary		Read a DICOM image
+//	@Description	Read a DICOM image from the server by SOP Instance UID
+//	@Tags			dicoms
+//	@Produce		json
+//	@Param			id	path		string	true	"DICOM SOP Instance UID"
+//	@Success		200	{object}	store.DICOM
+//	@Failure		404	{object}	string
+//	@Failure		500	{object}	string
+//	@Router			/dicoms/{id} [get]
 func (d *DICOMHandler) Read(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		if rec := recover(); rec != nil {
@@ -100,6 +119,16 @@ func (d *DICOMHandler) Read(w http.ResponseWriter, r *http.Request) {
 }
 
 // Attributes from a DICOM image
+//
+//	@Summary		Get attributes from DICOM image
+//	@Description	Get attributes from a DICOM image by tag
+//	@Tags			dicoms
+//	@Produce		json
+//	@Param			id	path		string	true	"DICOM SOP Instance UID"
+//	@Success		200	{array}		dicom.Element
+//	@Failure		404	{object}	string
+//	@Failure		500	{object}	string
+//	@Router			/dicoms/{id}/attributes [get]
 func (d *DICOMHandler) Attributes(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		if rec := recover(); rec != nil {
@@ -151,6 +180,15 @@ func (d *DICOMHandler) Attributes(w http.ResponseWriter, r *http.Request) {
 }
 
 // Image returns the DICOM image as a PNG
+//
+//	@Summary		Get DICOM image as a PNG
+//	@Description	Get DICOM imange as a PNG
+//	@Tags			dicoms
+//	@Produce		png
+//	@Param			id	path		string	true	"DICOM SOP Instance UID"
+//	@Failure		404	{object}	string
+//	@Failure		500	{object}	string
+//	@Router			/dicoms/{id}/image [get]
 func (d *DICOMHandler) Image(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		if rec := recover(); rec != nil {
@@ -171,6 +209,14 @@ func (d *DICOMHandler) Image(w http.ResponseWriter, r *http.Request) {
 }
 
 // List DICOMS
+//
+//	@Summary		List DICOMs
+//	@Description	List DICOMs on the server
+//	@Tags			dicoms
+//	@Produce		json
+//	@Success		200	{array}		store.DICOM
+//	@Failure		500	{object}	string
+//	@Router			/dicoms [get]
 func (d *DICOMHandler) List(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		if rec := recover(); rec != nil {

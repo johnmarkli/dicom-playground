@@ -16,6 +16,15 @@ import (
 //	    int - port for server to listen on
 //	DIME_DATA_DIR
 //	    string - directory to save data to the file system
+
+//	@title			dime API
+//	@version		1.0
+//	@description	dime is a small web service designed to work with DICOM files.
+
+//	@contact.name	John Li
+//	@contact.url	http://www.swagger.io/support
+//	@contact.email	johnmarkli@gmail.com
+
 func main() {
 
 	// Setup exit code for graceful shutdown

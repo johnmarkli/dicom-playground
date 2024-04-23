@@ -10,12 +10,14 @@ import (
 
 // DICOM is a model that represents a DICOM image
 type DICOM struct {
-	SOPInstanceUID string `json:"sopInstanceUID"`
-	dataset        *dicom.Dataset
+	ID      string `json:"id" example:"1.3.12.2.1107.5.2.6.24119.30000013121716094326500000436"`
+	dataset *dicom.Dataset
 }
 
 // NewDICOM returns a new DICOM instance
 func NewDICOM(dataset *dicom.Dataset) (*DICOM, error) {
+
+	// Take SOP Instance UID as unique ID for DICOM
 	sopInstanceUIDElement, err := dataset.FindElementByTag(tag.SOPInstanceUID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find sop instance uid: %w", err)
@@ -23,11 +25,11 @@ func NewDICOM(dataset *dicom.Dataset) (*DICOM, error) {
 	uids := sopInstanceUIDElement.Value.GetValue().([]string)
 	var uid string
 	if len(uids) > 0 {
-		uid = uids[0]
+		uid = uids[0] // assume first UID
 	}
 	return &DICOM{
-		SOPInstanceUID: uid,
-		dataset:        dataset,
+		ID:      uid,
+		dataset: dataset,
 	}, nil
 }
 

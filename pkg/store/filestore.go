@@ -38,7 +38,7 @@ func NewFileStore(dir string) (*FileStore, error) {
 func (fs *FileStore) Create(dcm *DICOM) error {
 
 	// save DICOM to file system
-	dcmFile, err := os.Create(filepath.Join(fs.dir, dicomDir, fmt.Sprintf("%s.dcm", dcm.SOPInstanceUID)))
+	dcmFile, err := os.Create(filepath.Join(fs.dir, dicomDir, fmt.Sprintf("%s.dcm", dcm.ID)))
 	if err != nil {
 		return fmt.Errorf("failed to create dicom file: %w", err)
 	}
@@ -49,7 +49,7 @@ func (fs *FileStore) Create(dcm *DICOM) error {
 	}
 
 	// save PNG to file system
-	pngFile, err := os.Create(filepath.Join(fs.dir, pngDir, fmt.Sprintf("%s.png", dcm.SOPInstanceUID)))
+	pngFile, err := os.Create(filepath.Join(fs.dir, pngDir, fmt.Sprintf("%s.png", dcm.ID)))
 	if err != nil {
 		return fmt.Errorf("failed to create png file: %w", err)
 	}
@@ -68,8 +68,8 @@ func (fs *FileStore) Create(dcm *DICOM) error {
 }
 
 // Read a DICOM image from the file system by SOP Instance UID
-func (fs *FileStore) Read(sopInstanceUID string) (*DICOM, error) {
-	fi, err := os.Stat(filepath.Join(fs.dir, dicomDir, fmt.Sprintf("%s.dcm", sopInstanceUID)))
+func (fs *FileStore) Read(id string) (*DICOM, error) {
+	fi, err := os.Stat(filepath.Join(fs.dir, dicomDir, fmt.Sprintf("%s.dcm", id)))
 	if err != nil {
 		return nil, ErrNotFound
 	}
@@ -85,12 +85,12 @@ func (fs *FileStore) Read(sopInstanceUID string) (*DICOM, error) {
 }
 
 // GetImage gets DICOM image as a byte array
-func (fs *FileStore) GetImage(sopInstanceUID string) ([]byte, error) {
-	_, err := os.Stat(filepath.Join(fs.dir, pngDir, fmt.Sprintf("%s.png", sopInstanceUID)))
+func (fs *FileStore) GetImage(id string) ([]byte, error) {
+	_, err := os.Stat(filepath.Join(fs.dir, pngDir, fmt.Sprintf("%s.png", id)))
 	if err != nil {
 		return nil, ErrNotFound
 	}
-	b, err := os.ReadFile(filepath.Join(fs.dir, pngDir, fmt.Sprintf("%s.png", sopInstanceUID)))
+	b, err := os.ReadFile(filepath.Join(fs.dir, pngDir, fmt.Sprintf("%s.png", id)))
 	if err != nil {
 		return nil, fmt.Errorf("failed to read png file: %w", err)
 	}

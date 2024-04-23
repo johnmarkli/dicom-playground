@@ -22,7 +22,7 @@ func NewMemStore() (*MemStore, error) {
 
 // Create DICOM image in memory store
 func (ms *MemStore) Create(dcm *DICOM) error {
-	ms.dicoms[dcm.SOPInstanceUID] = dcm
+	ms.dicoms[dcm.ID] = dcm
 
 	pngImg, err := dcm.Image()
 	if err != nil {
@@ -34,28 +34,28 @@ func (ms *MemStore) Create(dcm *DICOM) error {
 		if err != nil {
 			return err
 		}
-		ms.pngs[dcm.SOPInstanceUID] = b.Bytes()
+		ms.pngs[dcm.ID] = b.Bytes()
 	}
 	return nil
 }
 
 // Read a DICOM image from the memory by SOP Instance UID
-func (ms *MemStore) Read(sopInstanceUID string) (*DICOM, error) {
-	if dcm, ok := ms.dicoms[sopInstanceUID]; ok {
+func (ms *MemStore) Read(id string) (*DICOM, error) {
+	if dcm, ok := ms.dicoms[id]; ok {
 		return dcm, nil
 	}
 	return nil, ErrNotFound
 }
 
 // GetImage gets DICOM image as a byte array
-func (ms *MemStore) GetImage(sopInstanceUID string) ([]byte, error) {
-	if b, ok := ms.pngs[sopInstanceUID]; ok {
+func (ms *MemStore) GetImage(id string) ([]byte, error) {
+	if b, ok := ms.pngs[id]; ok {
 		return b, nil
 	}
 	return []byte{}, ErrNotFound
 }
 
-// List DICOM images from the file system by SOP Instance UID
+// List DICOM images from the file system
 func (ms *MemStore) List() ([]*DICOM, error) {
 	dcms := []*DICOM{}
 	for _, dcm := range ms.dicoms {

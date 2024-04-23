@@ -65,7 +65,7 @@ func TestServerRoutes(t *testing.T) {
 	res = w.Result()
 	body, err = io.ReadAll(res.Body)
 	assert.NoError(t, err)
-	assert.JSONEq(t, `{"sopInstanceUID":"1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395"}`, string(body))
+	assert.JSONEq(t, `{"id":"1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395"}`, string(body))
 	res.Body.Close()
 
 	// GET /dicoms
@@ -75,22 +75,22 @@ func TestServerRoutes(t *testing.T) {
 	res = w.Result()
 	body, err = io.ReadAll(res.Body)
 	assert.NoError(t, err)
-	assert.JSONEq(t, `[{"sopInstanceUID":"1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395"}]`, string(body))
+	assert.JSONEq(t, `[{"id":"1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395"}]`, string(body))
 	res.Body.Close()
 
 	// GET /dicoms/:id
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, fmt.Sprintf("/dicoms/%s", testSOPInstanceUID), nil)
+	r = httptest.NewRequest(http.MethodGet, fmt.Sprintf("/dicoms/%s", testID), nil)
 	router.ServeHTTP(w, r)
 	res = w.Result()
 	body, err = io.ReadAll(res.Body)
 	assert.NoError(t, err)
-	assert.JSONEq(t, `{"sopInstanceUID":"1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395"}`, string(body))
+	assert.JSONEq(t, `{"id":"1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395"}`, string(body))
 	res.Body.Close()
 
 	// GET /dicoms/:id/attributes
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, fmt.Sprintf("/dicoms/%s/attributes?tag=(0002,0000)&tag=(0008,0016)", testSOPInstanceUID), nil)
+	r = httptest.NewRequest(http.MethodGet, fmt.Sprintf("/dicoms/%s/attributes?tag=(0002,0000)&tag=(0008,0016)", testID), nil)
 	router.ServeHTTP(w, r)
 	res = w.Result()
 	body, err = io.ReadAll(res.Body)
@@ -104,7 +104,7 @@ func TestServerRoutes(t *testing.T) {
 
 	// GET /dicoms/:id/image
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, fmt.Sprintf("/dicoms/%s/image", testSOPInstanceUID), nil)
+	r = httptest.NewRequest(http.MethodGet, fmt.Sprintf("/dicoms/%s/image", testID), nil)
 	router.ServeHTTP(w, r)
 	res = w.Result()
 	body, err = io.ReadAll(res.Body)

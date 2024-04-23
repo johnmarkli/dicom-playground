@@ -17,8 +17,8 @@ import (
 )
 
 const (
-	testSOPInstanceUID = "1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395"
-	testDataPath       = "../../testdata/IM000001-mri"
+	testID       = "1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395"
+	testDataPath = "../../testdata/IM000001-mri"
 )
 
 func TestDICOMHandlerUpload(t *testing.T) {
@@ -32,7 +32,7 @@ func TestDICOMHandlerRead(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/dicoms", nil)
-	r = mux.SetURLVars(r, map[string]string{"id": testSOPInstanceUID})
+	r = mux.SetURLVars(r, map[string]string{"id": testID})
 
 	h := server.NewDICOMHandler(st)
 	h.Read(w, r)
@@ -41,7 +41,7 @@ func TestDICOMHandlerRead(t *testing.T) {
 
 	body, err := io.ReadAll(w.Result().Body)
 	assert.NoError(t, err)
-	assert.JSONEq(t, `{"sopInstanceUID":"1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395"}`, string(body))
+	assert.JSONEq(t, `{"id":"1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395"}`, string(body))
 }
 
 func TestDICOMHandlerAttributes(t *testing.T) {
@@ -49,8 +49,8 @@ func TestDICOMHandlerAttributes(t *testing.T) {
 	assert.NotNil(t, st)
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/dicoms/%s/attributes?tag=(0002,0000)&tag=(0008,0016)", testSOPInstanceUID), nil)
-	r = mux.SetURLVars(r, map[string]string{"id": testSOPInstanceUID})
+	r := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/dicoms/%s/attributes?tag=(0002,0000)&tag=(0008,0016)", testID), nil)
+	r = mux.SetURLVars(r, map[string]string{"id": testID})
 
 	h := server.NewDICOMHandler(st)
 	h.Attributes(w, r)
@@ -71,8 +71,8 @@ func TestDICOMHandlerImage(t *testing.T) {
 	assert.NotNil(t, st)
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/dicoms/%s/image/", testSOPInstanceUID), nil)
-	r = mux.SetURLVars(r, map[string]string{"id": testSOPInstanceUID})
+	r := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/dicoms/%s/image/", testID), nil)
+	r = mux.SetURLVars(r, map[string]string{"id": testID})
 
 	h := server.NewDICOMHandler(st)
 	h.Image(w, r)
@@ -98,7 +98,7 @@ func TestDICOMHandlerList(t *testing.T) {
 
 	body, err := io.ReadAll(w.Result().Body)
 	assert.NoError(t, err)
-	assert.JSONEq(t, `[{"sopInstanceUID":"1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395"}]`, string(body))
+	assert.JSONEq(t, `[{"id":"1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395"}]`, string(body))
 }
 
 func TestDICOMHandlerNotFound(t *testing.T) {
@@ -159,6 +159,6 @@ func uploadDICOM(t *testing.T, filePath string) *store.MemStore {
 
 	body, err := io.ReadAll(w.Result().Body)
 	assert.NoError(t, err)
-	assert.JSONEq(t, `{"sopInstanceUID":"1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395"}`, string(body))
+	assert.JSONEq(t, `{"id":"1.3.12.2.1107.5.2.6.24119.30000013121716094326500000395"}`, string(body))
 	return st
 }

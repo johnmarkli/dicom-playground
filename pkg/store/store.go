@@ -12,13 +12,13 @@ var (
 type Store interface {
 
 	// Create a new DICOM image
-	Create(*DICOM) error
+	Create(dcm *DICOM) error
 
 	// Read a DICOM image by SOP Instance UID
-	Read(sopInstanceUID string) (*DICOM, error)
+	Read(id string) (*DICOM, error)
 
 	// GetImage gets the DICOM image
-	GetImage(sopInstanceUID string) ([]byte, error)
+	GetImage(id string) ([]byte, error)
 
 	// List DICOM images
 	List() ([]*DICOM, error)
